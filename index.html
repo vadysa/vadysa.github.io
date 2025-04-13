@@ -20,6 +20,7 @@
 
     .container {
       position: relative;
+      z-index: 1; /* Чтобы субтитры всегда были выше */
     }
 
     #videoInput {
@@ -35,6 +36,7 @@
       border-radius: 10px;
       cursor: pointer;
       transition: 0.3s ease;
+      z-index: 100; /* Кнопка не должна скрываться за видео */
     }
 
     .choose-video-btn:hover {
@@ -49,13 +51,30 @@
 
     #videoPlayer {
       display: none;
-      position: fixed;
+      position: absolute; /* Видео на заднем плане */
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      object-fit: contain;
+      object-fit: contain; /* Видео будет сохранять пропорции */
       background-color: black;
+      z-index: 0; /* Видео не перекрывает субтитры */
+    }
+
+    .asbplayer-subtitles-container-bottom {
+      position: absolute;
+      bottom: 50px; /* Примерное расположение для субтитров */
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10; /* Убедимся, что субтитры поверх видео */
+    }
+
+    .asbplayer-subtitles {
+      font-size: 36px;
+      font-weight: 700;
+      color: #ffffff !important;
+      text-shadow: 0 0 3px #000000;
     }
   </style>
 </head>
@@ -71,9 +90,34 @@
     <video id="videoPlayer" controls>
       Ваш браузер не поддерживает воспроизведение видео.
     </video>
+
+    <!-- Пример контейнера с субтитрами, который не перекрывается -->
+    <div class="asbplayer-subtitles-container-bottom">
+      <div class="asbplayer-subtitles">
+        <span data-track="0" class="">
+          どわっ!!　はぁ はぁ　はぁ
+        </span>
+      </div>
+    </div>
   </div>
 
   <script>
     const input = document.getElementById('videoInput');
     const video = document.getElementById('videoPlayer');
-    const
+    const button = document.querySelector('.choose-video-btn');
+
+    input.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        video.style.display = 'block';  // Показываем видео
+        button.style.display = 'none';  // Скрываем кнопку
+        video.load();
+        video.play();
+      }
+    });
+  </script>
+
+</body>
+</html>
