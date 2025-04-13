@@ -68,26 +68,12 @@
     </button>
     <input type="file" accept="video/*" id="videoInput">
 
-    <video id="videoPlayer" controls></video>
+    <video id="videoPlayer" controls>
+      Ваш браузер не поддерживает воспроизведение видео.
+    </video>
   </div>
 
   <script>
     const input = document.getElementById('videoInput');
     const video = document.getElementById('videoPlayer');
-    const button = document.querySelector('.choose-video-btn');
-
-    input.addEventListener('change', function () {
-      const file = this.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        video.src = url;
-        video.style.display = 'block';  // Показываем видео
-        button.style.display = 'none';  // Скрываем кнопку
-        video.load();
-        video.play();
-      }
-    });
-  </script>
-
-</body>
-</html>
+    const
