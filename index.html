@@ -1,97 +1,58 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Красивый видео-проигрыватель</title>
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+  <title>MKV to MP4 Video Player</title>
   <style>
     body {
-      background-color: #111;
-      color: white;
       font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      text-align: center;
+      padding: 2em;
     }
-
-    .logo {
-      font-size: 32px;
-      margin-bottom: 20px;
-      color: #00aaff;
-    }
-
-    .select-button {
-      padding: 12px 25px;
-      background-color: #00aaff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
-
-    .select-button:hover {
-      background-color: #008ecc;
-    }
-
-    .plyr__video-wrapper {
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
     video {
-      display: none;
-      width: 80vw;
-      max-width: 960px;
-    }
-
-    .error-message {
-      color: red;
-      margin-top: 10px;
+      width: 100%;
+      max-width: 800px;
+      margin-top: 2em;
     }
   </style>
 </head>
 <body>
+  <h1>🎬 MKV to MP4 Player</h1>
+  <input type="file" id="uploader" accept=".mkv,.webm,.avi" />
+  <p id="status">Выберите .mkv файл</p>
+  <video id="video" controls></video>
 
-  <div class="logo">🎬 Выбери видео</div>
-  <button class="select-button" onclick="document.getElementById('videoInput').click()">📁 Загрузить видео (mp4/mkv)</button>
-  <input type="file" id="videoInput" accept="video/*,.mkv" style="display:none;">
-  <video id="player" controls></video>
-  <div id="error" class="error-message"></div>
-
-  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.2/dist/ffmpeg.min.js"></script>
   <script>
-    const input = document.getElementById('videoInput');
-    const video = document.getElementById('player');
-    const error = document.getElementById('error');
-    const player = new Plyr('#player', {
-      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
-    });
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: true });
 
-    input.addEventListener('change', function () {
-      const file = this.files[0];
-      error.textContent = '';
-      if (file) {
-        const url = URL.createObjectURL(file);
-        video.src = url;
-        video.style.display = 'block';
+    const uploader = document.getElementById("uploader");
+    const status = document.getElementById("status");
+    const video = document.getElementById("video");
 
-        // Проверка: можно ли воспроизвести?
-        const canPlay = video.canPlayType(file.type);
-        if (!canPlay) {
-          error.textContent = '❌ Этот формат не поддерживается. Попробуй конвертировать в .mp4 (H.264 + AAC)';
-          video.style.display = 'none';
-        } else {
-          video.load();
-          video.play();
-        }
-      }
+    uploader.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      status.textContent = "Загрузка ffmpeg...";
+      if (!ffmpeg.isLoaded()) await ffmpeg.load();
+
+      status.textContent = "Конвертация файла, подождите...";
+      const fileName = "input.mkv";
+      const outName = "output.mp4";
+
+      ffmpeg.FS("writeFile", fileName, await fetchFile(file));
+
+      await ffmpeg.run("-i", fileName, "-c:v", "libx264", "-c:a", "aac", outName);
+
+      const data = ffmpeg.FS("readFile", outName);
+
+      const videoBlob = new Blob([data.buffer], { type: "video/mp4" });
+      const videoURL = URL.createObjectURL(videoBlob);
+
+      video.src = videoURL;
+      status.textContent = "Готово!";
     });
   </script>
 </body>
