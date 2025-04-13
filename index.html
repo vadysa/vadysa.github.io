@@ -2,50 +2,87 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Видео без белых полей и fullscreen</title>
+  <title>Выберите видео | MVK</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background-color: black;
-      width: 100%;
+      background-color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100%;
+      font-family: Arial, sans-serif;
+      color: white;
+      text-align: center;
       overflow: hidden;
     }
 
+    .container {
+      position: relative;
+    }
+
+    #videoInput {
+      display: none;
+    }
+
+    .choose-video-btn {
+      padding: 15px 30px;
+      background-color: #00aaff;
+      color: white;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .choose-video-btn:hover {
+      background-color: #0088cc;
+    }
+
+    .logo {
+      font-size: 30px;
+      color: #00aaff;
+      margin-bottom: 20px;
+    }
+
     #videoPlayer {
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      object-fit: contain; /* или cover, если нужно */
+      object-fit: contain;
       background-color: black;
-    }
-
-    #videoInput {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1000;
-      opacity: 0.8;
     }
   </style>
 </head>
 <body>
 
-  <input type="file" accept="video/*" id="videoInput">
-  <video id="videoPlayer" controls></video>
+  <div class="container">
+    <div class="logo">MVK</div>
+    <button class="choose-video-btn" onclick="document.getElementById('videoInput').click();">
+      Выберите видео
+    </button>
+    <input type="file" accept="video/*" id="videoInput">
+
+    <video id="videoPlayer" controls></video>
+  </div>
 
   <script>
     const input = document.getElementById('videoInput');
     const video = document.getElementById('videoPlayer');
+    const button = document.querySelector('.choose-video-btn');
 
     input.addEventListener('change', function () {
       const file = this.files[0];
       if (file) {
         const url = URL.createObjectURL(file);
         video.src = url;
+        video.style.display = 'block';  // Показываем видео
+        button.style.display = 'none';  // Скрываем кнопку
         video.load();
         video.play();
       }
