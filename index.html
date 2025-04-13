@@ -20,7 +20,6 @@
 
     .container {
       position: relative;
-      z-index: 1; /* Чтобы субтитры всегда были выше */
     }
 
     #videoInput {
@@ -36,7 +35,6 @@
       border-radius: 10px;
       cursor: pointer;
       transition: 0.3s ease;
-      z-index: 100; /* Кнопка не должна скрываться за видео */
     }
 
     .choose-video-btn:hover {
@@ -63,7 +61,7 @@
 
     .asbplayer-subtitles-container-bottom {
       position: absolute;
-      bottom: 50px; /* Примерное расположение для субтитров */
+      bottom: 50px;
       left: 0;
       right: 0;
       text-align: center;
@@ -85,13 +83,13 @@
     <button class="choose-video-btn" onclick="document.getElementById('videoInput').click();">
       Выберите видео
     </button>
-    <input type="file" accept="video/*" id="videoInput">
+    <input type="file" accept="video/*,.mkv" id="videoInput">
 
     <video id="videoPlayer" controls>
       Ваш браузер не поддерживает воспроизведение видео.
     </video>
 
-    <!-- Пример контейнера с субтитрами, который не перекрывается -->
+    <!-- Пример контейнера с субтитрами -->
     <div class="asbplayer-subtitles-container-bottom">
       <div class="asbplayer-subtitles">
         <span data-track="0" class="">
