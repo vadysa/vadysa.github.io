@@ -2,33 +2,35 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Проигрыватель видео с выбором файла</title>
+  <title>Видео без полей</title>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background-color: #f0f0f0;
-      padding: 40px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      height: 100%;
+      overflow: hidden;
     }
 
-    video {
-      max-width: 100%;
-      height: auto;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-      margin-top: 20px;
+    #videoPlayer {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      background-color: black;
     }
 
-    input[type="file"] {
-      margin-top: 20px;
+    #videoInput {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      opacity: 0.8;
     }
   </style>
 </head>
 <body>
 
-  <h1>Выберите видеофайл для просмотра</h1>
   <input type="file" accept="video/*" id="videoInput">
-  <br>
   <video id="videoPlayer" controls></video>
 
   <script>
