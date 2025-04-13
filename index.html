@@ -2,97 +2,78 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Выберите видео | MKV</title>
+  <title>MVK Player</title>
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
   <style>
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      background-color: #222;
+      background-color: #111;
+      color: white;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      height: 100%;
-      font-family: Arial, sans-serif;
-      color: white;
-      text-align: center;
-      overflow: hidden;
-    }
-
-    .container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    #videoInput {
-      display: none;
-    }
-
-    .choose-video-btn {
-      padding: 15px 30px;
-      background-color: #00aaff;
-      color: white;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: 0.3s ease;
-      z-index: 100;
-    }
-
-    .choose-video-btn:hover {
-      background-color: #0088cc;
+      justify-content: center;
+      height: 100vh;
     }
 
     .logo {
-      font-size: 30px;
+      font-size: 32px;
+      margin-bottom: 20px;
       color: #00aaff;
+    }
+
+    .select-button {
+      padding: 12px 25px;
+      background-color: #00aaff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
       margin-bottom: 20px;
     }
 
-    #videoPlayer {
+    .select-button:hover {
+      background-color: #008ecc;
+    }
+
+    #my-video {
+      width: 80%;
+      max-width: 960px;
       display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background-color: black;
-      z-index: 0;
-    }
-
-    /* Стили для субтитров */
-    .asbplayer-subtitles-container-bottom {
-      position: absolute;
-      bottom: 50px;  /* Подкорректировать по необходимости */
-      left: 0;
-      right: 0;
-      text-align: center;
-      z-index: 10;  /* Убедимся, что субтитры поверх видео */
-      padding: 0 10px;
-    }
-
-    .asbplayer-subtitles {
-      font-size: 36px;
-      font-weight: 700;
-      color: #ffffff !important;
-      text-shadow: 0 0 3px #000000;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <div class="logo">MVK</div>
-    <button class="choose-video-btn" onclick="document.getElementById('videoInput').click();">
-      Выберите видео
-    </button>
-    <input type="file" accept="video/*,.mkv" id="videoInput">
+  <div class="logo">MVK Player</div>
+  <button class="select-button" onclick="document.getElementById('videoInput').click()">Выбрать видео</button>
+  <input type="file" id="videoInput" accept="video/*,.mkv" style="display:none;">
 
-    <video id="videoPlayer" controls>
-      Ваш браузер не поддерживает воспроизведение видео.
-    </video>
+  <video id="my-video" class="video-js vjs-default-skin" controls preload="auto">
+    <source id="videoSource" src="" type="video/mp4">
+    <track kind="subtitles" label="Русские субтитры" src="" srclang="ru" default>
+    Ваш браузер не поддерживает видео.
+  </video>
 
-    <!-- Пример контейнера с субтитрами -->
-    <div class="
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script>
+    const input = document.getElementById('videoInput');
+    const player = videojs('my-video');
+    const videoElement = document.getElementById('my-video');
+    const sourceElement = document.getElementById('videoSource');
+
+    input.addEventListener('change', function () {
+      const file = this.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        sourceElement.src = url;
+        sourceElement.type = file.type;
+        player.src({ type: file.type, src: url });
+        videoElement.style.display = 'block';
+        player.play();
+      }
+    });
+  </script>
+</body>
+</html>
