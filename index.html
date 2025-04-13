@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>MVK Player</title>
-  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Красивый видео-проигрыватель</title>
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <style>
     body {
-      margin: 0;
       background-color: #111;
       color: white;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -37,41 +40,57 @@
       background-color: #008ecc;
     }
 
-    #my-video {
-      width: 80%;
-      max-width: 960px;
+    .plyr__video-wrapper {
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    video {
       display: none;
+      width: 80vw;
+      max-width: 960px;
+    }
+
+    .error-message {
+      color: red;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-  <div class="logo">MVK Player</div>
-  <button class="select-button" onclick="document.getElementById('videoInput').click()">Выбрать видео</button>
+  <div class="logo">🎬 Выбери видео</div>
+  <button class="select-button" onclick="document.getElementById('videoInput').click()">📁 Загрузить видео (mp4/mkv)</button>
   <input type="file" id="videoInput" accept="video/*,.mkv" style="display:none;">
+  <video id="player" controls></video>
+  <div id="error" class="error-message"></div>
 
-  <video id="my-video" class="video-js vjs-default-skin" controls preload="auto">
-    <source id="videoSource" src="" type="video/mp4">
-    <track kind="subtitles" label="Русские субтитры" src="" srclang="ru" default>
-    Ваш браузер не поддерживает видео.
-  </video>
-
-  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
   <script>
     const input = document.getElementById('videoInput');
-    const player = videojs('my-video');
-    const videoElement = document.getElementById('my-video');
-    const sourceElement = document.getElementById('videoSource');
+    const video = document.getElementById('player');
+    const error = document.getElementById('error');
+    const player = new Plyr('#player', {
+      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+    });
 
     input.addEventListener('change', function () {
       const file = this.files[0];
+      error.textContent = '';
       if (file) {
         const url = URL.createObjectURL(file);
-        sourceElement.src = url;
-        sourceElement.type = file.type;
-        player.src({ type: file.type, src: url });
-        videoElement.style.display = 'block';
-        player.play();
+        video.src = url;
+        video.style.display = 'block';
+
+        // Проверка: можно ли воспроизвести?
+        const canPlay = video.canPlayType(file.type);
+        if (!canPlay) {
+          error.textContent = '❌ Этот формат не поддерживается. Попробуй конвертировать в .mp4 (H.264 + AAC)';
+          video.style.display = 'none';
+        } else {
+          video.load();
+          video.play();
+        }
       }
     });
   </script>
