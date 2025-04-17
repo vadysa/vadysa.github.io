@@ -260,14 +260,6 @@
             }
         });
 
-        // Управление воспроизведением по клику на видео
-        videoPlayer.addEventListener('click', () => {
-            if (videoPlayer.paused) {
-                videoPlayer.play();
-            } else {
-                videoPlayer.pause();
-            }
-        });
         // Управление воспроизведением по пробелу
         document.addEventListener('keydown', (e) => {
             // Не срабатывает, если фокус в input/textarea/button
