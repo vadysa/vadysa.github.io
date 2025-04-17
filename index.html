@@ -50,8 +50,9 @@
             width: 100%;
             margin-top: 12px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
         #customControls div {
@@ -66,7 +67,9 @@
             font-variant-numeric: tabular-nums;
         }
         #progressBar {
-            flex: 1;
+            flex: 1 1 120px;
+            min-width: 80px;
+            max-width: 400px;
         }
         #duration {
             min-width: 48px;
@@ -115,25 +118,30 @@
             background: rgba(0,0,0,0.5);
             padding-bottom: 20px;
         }
+        #playerContainer:fullscreen #customControls.hide-controls,
+        #playerContainer:-webkit-full-screen #customControls.hide-controls {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Simple Video Player</h2>
+        <div id="videoNames" style="margin-bottom: 12px; text-align: center;">
+          <div id="currentVideoName" style="font-weight: bold;"></div>
+          <div id="previousVideoName" style="color: #aaa; font-size: 0.95em;"></div>
+        </div>
         <input type="file" id="videoFile" accept="video/*,.mkv">
         <div id="playerContainer">
             <video id="videoPlayer" style="display:block; width:100%; max-width:480px; background:#000;"></video>
-            <div id="customControls" style="display:none; width:100%; margin-top:12px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <div style="display: flex; align-items: center; width: 100%; gap: 8px;">
-                    <span id="currentTime" style="min-width: 48px; text-align: right; font-variant-numeric: tabular-nums;">0:00</span>
-                    <input type="range" id="progressBar" min="0" value="0" step="0.01" style="flex: 1;">
-                    <span id="duration" style="min-width: 48px; text-align: left; font-variant-numeric: tabular-nums;">0:00</span>
-                </div>
-                <div style="display: flex; align-items: center; width: 100%; gap: 12px; justify-content: center;">
-                    <button id="muteBtn" style="padding: 4px 12px;">🔊</button>
-                    <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1" style="width: 80px;">
-                    <button id="fullscreenBtn" style="padding: 4px 12px;">⛶</button>
-                </div>
+            <div id="customControls" style="display:none; width:100%; margin-top:12px; display: flex; flex-direction: row; align-items: center; gap: 8px; justify-content: center;">
+                <button id="playPauseBtn">▶️</button>
+                <span id="currentTime" style="min-width: 48px; text-align: right; font-variant-numeric: tabular-nums;">0:00</span>
+                <input type="range" id="progressBar" min="0" value="0" step="0.01" style="flex: 1 1 120px; min-width:80px; max-width:400px;">
+                <span id="duration" style="min-width: 48px; text-align: left; font-variant-numeric: tabular-nums;">0:00</span>
+                <button id="muteBtn" style="padding: 4px 12px;">🔊</button>
+                <input type="range" id="volumeBar" min="0" max="1" step="0.01" value="1" style="width: 80px;">
+                <button id="fullscreenBtn" style="padding: 4px 12px;">⛶</button>
             </div>
         </div>
     </div>
@@ -148,6 +156,7 @@
         const muteBtn = document.getElementById('muteBtn');
         const volumeBar = document.getElementById('volumeBar');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
 
         function formatTime(sec) {
             if (isNaN(sec)) return '0:00';
@@ -159,18 +168,41 @@
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                // Сохраняем названия в localStorage
+                const prevName = localStorage.getItem('currentVideoName');
+                if (prevName) {
+                    localStorage.setItem('previousVideoName', prevName);
+                }
+                localStorage.setItem('currentVideoName', file.name);
+                // Обновляем отображение названий
+                updateVideoNames();
                 const url = URL.createObjectURL(file);
                 videoPlayer.src = url;
                 videoPlayer.load();
                 videoPlayer.play();
             }
         });
+        function updateVideoNames() {
+            const cur = localStorage.getItem('currentVideoName') || '';
+            const prev = localStorage.getItem('previousVideoName') || '';
+            document.getElementById('currentVideoName').textContent = cur ? `Текущее видео: ${cur}` : '';
+            document.getElementById('previousVideoName').textContent = prev ? `Прошлое видео: ${prev}` : '';
+        }
+        // Показываем названия при загрузке страницы
+        updateVideoNames();
 
         videoPlayer.addEventListener('play', () => {
-            customControls.style.display = 'none';
+            if (document.fullscreenElement === playerContainer || document.webkitFullscreenElement === playerContainer) {
+                customControls.classList.add('hide-controls');
+            } else {
+                customControls.style.display = 'flex';
+            }
+            playPauseBtn.textContent = '⏸️';
         });
         videoPlayer.addEventListener('pause', () => {
+            customControls.classList.remove('hide-controls');
             customControls.style.display = 'flex';
+            playPauseBtn.textContent = '▶️';
         });
         videoPlayer.addEventListener('timeupdate', () => {
             if (!progressBar.getAttribute('max') || progressBar.max != videoPlayer.duration) {
@@ -201,14 +233,34 @@
             muteBtn.textContent = videoPlayer.muted ? '🔇' : '🔊';
         });
         fullscreenBtn.addEventListener('click', () => {
-            if (playerContainer.requestFullscreen) {
-                playerContainer.requestFullscreen();
-            } else if (playerContainer.webkitRequestFullscreen) {
-                playerContainer.webkitRequestFullscreen();
-            } else if (playerContainer.msRequestFullscreen) {
-                playerContainer.msRequestFullscreen();
+            const isFull = document.fullscreenElement === playerContainer || document.webkitFullscreenElement === playerContainer;
+            if (!isFull) {
+                if (playerContainer.requestFullscreen) {
+                    playerContainer.requestFullscreen();
+                } else if (playerContainer.webkitRequestFullscreen) {
+                    playerContainer.webkitRequestFullscreen();
+                } else if (playerContainer.msRequestFullscreen) {
+                    playerContainer.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
             }
         });
+        playPauseBtn.addEventListener('click', () => {
+            if (videoPlayer.paused) {
+                videoPlayer.play();
+            } else {
+                videoPlayer.pause();
+            }
+        });
+
+        // Управление воспроизведением по клику на видео
         videoPlayer.addEventListener('click', () => {
             if (videoPlayer.paused) {
                 videoPlayer.play();
@@ -216,6 +268,45 @@
                 videoPlayer.pause();
             }
         });
+        // Управление воспроизведением по пробелу
+        document.addEventListener('keydown', (e) => {
+            // Не срабатывает, если фокус в input/textarea/button
+            if (e.code === 'Space' && !['INPUT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)) {
+                e.preventDefault();
+                if (videoPlayer.paused) {
+                    videoPlayer.play();
+                } else {
+                    videoPlayer.pause();
+                }
+            }
+        });
+
+        function handleFullscreenChange() {
+            const isFullscreen = document.fullscreenElement === playerContainer || document.webkitFullscreenElement === playerContainer;
+            if (isFullscreen && !videoPlayer.paused) {
+                customControls.classList.add('hide-controls');
+            } else {
+                customControls.classList.remove('hide-controls');
+                customControls.style.display = 'flex';
+            }
+        }
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+        let cursorTimeout;
+        function hideCursor() {
+            document.body.style.cursor = 'none';
+        }
+        function showCursor() {
+            document.body.style.cursor = '';
+        }
+        document.addEventListener('mousemove', () => {
+            showCursor();
+            clearTimeout(cursorTimeout);
+            cursorTimeout = setTimeout(hideCursor, 1000);
+        });
+        // При загрузке страницы курсор показываем
+        showCursor();
     </script>
 </body>
 </html>
