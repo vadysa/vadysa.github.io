@@ -116,7 +116,8 @@
             left: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            padding-bottom: 20px;
+            padding-bottom: 8px;
+            padding-top: 8px;
         }
         #playerContainer:fullscreen #customControls.hide-controls,
         #playerContainer:-webkit-full-screen #customControls.hide-controls {
@@ -257,7 +258,7 @@
                 videoPlayer.src = url;
                 videoPlayer.load();
                 videoPlayer.play();
-                
+
                 // Создаём "виртуальную папку" из одного файла
                 videoFiles = [{
                     name: file.name,
