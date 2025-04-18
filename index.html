@@ -361,8 +361,8 @@
         const STORAGE_KEY = 'video_folder_files_v2';
 
         // --- Сохранение/загрузка папки ---
-        function saveToStorage(filesArr, idx) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ files: filesArr, idx: idx ?? 0 }));
+        function saveToStorage(filesArr, idx, prevIdx) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ files: filesArr.map(f => ({ name: f.name, url: f.url })), idx: idx ?? 0, prevIdx: prevIdx ?? null }));
         }
         function loadFromStorage() {
             const data = localStorage.getItem(STORAGE_KEY);
@@ -392,7 +392,7 @@
                         currentIdx = idx;
                         playCurrentVideo();
                         renderVideoList();
-                        saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+                        saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx, previousIdx);
                     }
                 };
                 if (!filesAvailable) li.style.opacity = '0.6';
@@ -418,12 +418,30 @@
                 .filter(f => f.type.startsWith('video/'))
                 .map(f => ({ name: f.webkitRelativePath || f.name, url: URL.createObjectURL(f), file: f }));
             if (filesArr.length === 0) return;
+            // Восстановление индексов из localStorage
+            let idxToRestore = 0;
+            let prevToRestore = null;
+            const stored = loadFromStorage();
+            if (stored && Array.isArray(stored.files) && stored.files.length > 0) {
+                // ищем совпадения по имени
+                const storedNames = stored.files.map(f => f.name);
+                const storedIdx = stored.idx ?? 0;
+                const storedPrev = stored.prevIdx ?? null;
+                // ищем соответствие текущего видео
+                let foundIdx = filesArr.findIndex(f => f.name === stored.files[storedIdx]?.name);
+                if (foundIdx >= 0) idxToRestore = foundIdx;
+                // соответствие предыдущего видео
+                if (storedPrev !== null && stored.files[storedPrev]) {
+                    let foundPrev = filesArr.findIndex(f => f.name === stored.files[storedPrev]?.name);
+                    if (foundPrev >= 0) prevToRestore = foundPrev;
+                }
+            }
             videoFiles = filesArr;
-            previousIdx = null;
-            currentIdx = 0;
+            previousIdx = prevToRestore;
+            currentIdx = idxToRestore;
             playCurrentVideo();
             renderVideoList();
-            saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+            saveToStorage(videoFiles, currentIdx, previousIdx);
         });
         // --- Автоматическая загрузка из localStorage ---
         window.addEventListener('DOMContentLoaded', () => {
@@ -431,7 +449,7 @@
             if (stored && Array.isArray(stored.files) && stored.files.length > 0) {
                 videoFiles = stored.files.map(f => ({ ...f }));
                 currentIdx = stored.idx ?? 0;
-                previousIdx = null;
+                previousIdx = stored.prevIdx ?? null;
                 playCurrentVideo();
                 renderVideoList();
             }
@@ -443,7 +461,7 @@
                 currentIdx++;
                 playCurrentVideo();
                 renderVideoList();
-                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx, previousIdx);
             }
         });
         // --- Горячие клавиши: стрелки ---
@@ -454,13 +472,13 @@
                 currentIdx++;
                 playCurrentVideo();
                 renderVideoList();
-                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx, previousIdx);
             } else if (e.code === 'ArrowUp' && currentIdx > 0) {
                 previousIdx = currentIdx;
                 currentIdx--;
                 playCurrentVideo();
                 renderVideoList();
-                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx, previousIdx);
             }
         });
 
