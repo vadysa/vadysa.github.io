@@ -122,10 +122,80 @@
         #playerContainer:-webkit-full-screen #customControls.hide-controls {
             display: none !important;
         }
+        /* --- Video List Sidebar Styles --- */
+        #videoSidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 260px;
+            height: 100vh;
+            background: #232323;
+            border-left: 1px solid #333;
+            box-shadow: -2px 0 16px rgba(0,0,0,0.15);
+            padding: 24px 0 0 0;
+            z-index: 100;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        #videoSidebar h3 {
+            margin: 0 0 12px 24px;
+            font-size: 1.1em;
+            color: #aaa;
+        }
+        #videoList {
+            list-style: none;
+            padding: 0 16px 16px 16px;
+            margin: 0;
+        }
+        #videoList li {
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-size: 1em;
+            color: #eee;
+            user-select: none;
+        }
+        #videoList li.current {
+            background: #1e88e5;
+            color: #fff;
+        }
+        #videoList li.previous {
+            background: #388e3c;
+            color: #fff;
+        }
+        #videoList li:hover {
+            background: #444;
+        }
+        #selectFolderBtn {
+            margin: 0 0 18px 24px;
+            padding: 6px 18px;
+            border-radius: 6px;
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        #selectFolderBtn:hover {
+            background: #1565c0;
+        }
+        @media (max-width: 900px) {
+            #videoSidebar {
+                position: static;
+                width: 100vw;
+                height: auto;
+                border-left: none;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="position:relative;max-width:650px;">
         <h2>Simple Video Player</h2>
         <div id="videoNames" style="margin-bottom: 12px; text-align: center;">
           <div id="currentVideoName" style="font-weight: bold;"></div>
@@ -144,6 +214,13 @@
                 <button id="fullscreenBtn" style="padding: 4px 12px;">⛶</button>
             </div>
         </div>
+    </div>
+    <!-- Сайдбар со списком видео -->
+    <div id="videoSidebar">
+        <button id="selectFolderBtn">Выбрать папку с видео</button>
+        <input type="file" id="folderInput" style="display:none;" webkitdirectory directory multiple>
+        <h3>Видео из папки</h3>
+        <ul id="videoList"></ul>
     </div>
     <script>
         const fileInput = document.getElementById('videoFile');
@@ -180,6 +257,18 @@
                 videoPlayer.src = url;
                 videoPlayer.load();
                 videoPlayer.play();
+                
+                // Создаём "виртуальную папку" из одного файла
+                videoFiles = [{
+                    name: file.name,
+                    url: URL.createObjectURL(file),
+                    file: file
+                }];
+                previousIdx = null;
+                currentIdx = 0;
+                playCurrentVideo();
+                renderVideoList();
+                saveToStorage(videoFiles, currentIdx);
             }
         });
         function updateVideoNames() {
@@ -257,6 +346,121 @@
                 videoPlayer.play();
             } else {
                 videoPlayer.pause();
+            }
+        });
+
+        // --- DOM элементы для папки и списка видео ---
+        const folderInput = document.getElementById('folderInput');
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
+        const videoListElem = document.getElementById('videoList');
+        const currentVideoNameElem = document.getElementById('currentVideoName');
+        const previousVideoNameElem = document.getElementById('previousVideoName');
+        let videoFiles = [];
+        let currentIdx = 0;
+        let previousIdx = null;
+        const STORAGE_KEY = 'video_folder_files_v2';
+
+        // --- Сохранение/загрузка папки ---
+        function saveToStorage(filesArr, idx) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ files: filesArr, idx: idx ?? 0 }));
+        }
+        function loadFromStorage() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) return null;
+            try {
+                return JSON.parse(data);
+            } catch {
+                return null;
+            }
+        }
+        // --- Заполнение списка видео ---
+        function renderVideoList() {
+            videoListElem.innerHTML = '';
+            const filesAvailable = videoFiles.length > 0 && !!videoFiles[0].file;
+            videoFiles.forEach((file, idx) => {
+                const li = document.createElement('li');
+                li.textContent = file.name;
+                if (idx === currentIdx) li.classList.add('current');
+                else if (idx === previousIdx) li.classList.add('previous');
+                li.onclick = () => {
+                    if (!filesAvailable) {
+                        alert('Для воспроизведения выберите папку с видео повторно.');
+                        return;
+                    }
+                    if (currentIdx !== idx) {
+                        previousIdx = currentIdx;
+                        currentIdx = idx;
+                        playCurrentVideo();
+                        renderVideoList();
+                        saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+                    }
+                };
+                if (!filesAvailable) li.style.opacity = '0.6';
+                videoListElem.appendChild(li);
+            });
+        }
+        // --- Воспроизведение текущего видео ---
+        function playCurrentVideo() {
+            if (!videoFiles[currentIdx]) return;
+            videoPlayer.src = videoFiles[currentIdx].url;
+            currentVideoNameElem.textContent = `Текущее видео: ${videoFiles[currentIdx].name}`;
+            previousVideoNameElem.textContent = previousIdx !== null && videoFiles[previousIdx] ? `Прошлое видео: ${videoFiles[previousIdx].name}` : '';
+            videoPlayer.load();
+            videoPlayer.play();
+        }
+        // --- Обработка выбора папки ---
+        selectFolderBtn.addEventListener('click', () => {
+            folderInput.value = '';
+            folderInput.click();
+        });
+        folderInput.addEventListener('change', (e) => {
+            const filesArr = Array.from(e.target.files)
+                .filter(f => f.type.startsWith('video/'))
+                .map(f => ({ name: f.webkitRelativePath || f.name, url: URL.createObjectURL(f), file: f }));
+            if (filesArr.length === 0) return;
+            videoFiles = filesArr;
+            previousIdx = null;
+            currentIdx = 0;
+            playCurrentVideo();
+            renderVideoList();
+            saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+        });
+        // --- Автоматическая загрузка из localStorage ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const stored = loadFromStorage();
+            if (stored && Array.isArray(stored.files) && stored.files.length > 0) {
+                videoFiles = stored.files.map(f => ({ ...f }));
+                currentIdx = stored.idx ?? 0;
+                previousIdx = null;
+                playCurrentVideo();
+                renderVideoList();
+            }
+        });
+        // --- Следующее видео по завершении ---
+        videoPlayer.addEventListener('ended', () => {
+            if (currentIdx < videoFiles.length - 1) {
+                previousIdx = currentIdx;
+                currentIdx++;
+                playCurrentVideo();
+                renderVideoList();
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+            }
+        });
+        // --- Горячие клавиши: стрелки ---
+        document.addEventListener('keydown', (e) => {
+            if (['INPUT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)) return;
+            if (e.code === 'ArrowDown' && currentIdx < videoFiles.length - 1) {
+                previousIdx = currentIdx;
+                currentIdx++;
+                playCurrentVideo();
+                renderVideoList();
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
+            } else if (e.code === 'ArrowUp' && currentIdx > 0) {
+                previousIdx = currentIdx;
+                currentIdx--;
+                playCurrentVideo();
+                renderVideoList();
+                saveToStorage(videoFiles.map(f => ({ name: f.name, url: f.url })), currentIdx);
             }
         });
 
