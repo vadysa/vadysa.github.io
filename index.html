@@ -438,21 +438,23 @@
                 const storedNames = stored.files.map(f => f.name);
                 const storedIdx = stored.idx ?? 0;
                 const storedPrev = stored.prevIdx ?? null;
+                // соответствие предыдущего видео
+                if (storedPrev !== null && stored.files[storedPrev]) {
+                    let foundPrev = filesArr.findIndex(f => f.name === stored.files[storedPrev]?.name);
+                    if (foundPrev >= 0) prevToRestore = foundPrev;
+                }
+                
                 // ищем соответствие текущего видео
                 let foundIdx = filesArr.findIndex(f => f.name === stored.files[storedIdx]?.name);
                 if (foundIdx >= 0) {
                     // Если нашли текущее видео — воспроизводим следующее, если оно есть
                     if (foundIdx < filesArr.length - 1) {
                         idxToRestore = foundIdx + 1;
+                        prevToRestore = foundIdx;
                     } else {
                         // Если текущее — последнее, можно начать сначала или не воспроизводить (оставим без изменения)
                         idxToRestore = foundIdx; // или 0, если хотите начать сначала
                     }
-                }
-                // соответствие предыдущего видео
-                if (storedPrev !== null && stored.files[storedPrev]) {
-                    let foundPrev = filesArr.findIndex(f => f.name === stored.files[storedPrev]?.name);
-                    if (foundPrev >= 0) prevToRestore = foundPrev;
                 }
             }
             videoFiles = filesArr;
